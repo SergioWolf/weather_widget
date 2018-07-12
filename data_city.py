@@ -14,7 +14,7 @@ class City:
         self.country = country
 
     def get_full_info(self):
-        return self.id + self.name + self.country
+        return self.id, self.name, self.country
 
     def get_id(self):
         return self.id

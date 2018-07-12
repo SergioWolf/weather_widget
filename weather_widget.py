@@ -28,10 +28,10 @@ def set_weather_icon(label, weather):
     label.setPixmap(pixmap)
 
 
-data = owm_request.request_forecast(owm_request.city_id)
 
-def start(data):
 
+def start():
+    data = owm_request.request_forecast(owm_request.city_id)
     ui.lineEditCity.setText(data['city']['name'] + ' ' + data['city']['country'])
     ui.lineEditDateTime.setText(data['list'][1]['dt_txt'])
     ui.lineEditDegree.setText(str('{0:+3.0f}'.format(data['list'][0]['main']['temp'])) + ' ' + '°C')
@@ -44,10 +44,7 @@ def start(data):
 
     set_weather_icon(ui.labelPicture, data['list'][1]['weather'])
 
-ui.pushButtonUpdate.clicked.connect(start)
-
-import os
-
+start()
 
 def search_city():
     dialog = QtWidgets.QDialog()
@@ -58,6 +55,13 @@ def search_city():
 
     def onActivatedId(text2):
         print(text2)
+        country = sc.comboBoxCountry.currentText()
+        city_id = 0
+        for i in data_city.cities:
+            if i.get_name() == text2 and i.get_country() == country:
+                city_id = i.get_id()
+                print (city_id)
+        sc.lineEditCityID.setText(str(city_id))
 
     def onActivatedCity(text1):
         lst_city = sorted(set([val.get_name() for val in data_city.cities if val.get_country() == text1]))
@@ -70,15 +74,36 @@ def search_city():
     sc.comboBoxCountry.activated[str].connect(onActivatedCity)
     sc.comboBox.activated[str].connect(onActivatedId)
 
+    def other_city():
+        city_id = sc.lineEditCityID.text()
+        print(city_id)
+        if city_id == None:
+            dialog.accept()
+        else:
+            data = owm_request.request_forecast(city_id)
+            ui.lineEditCity.setText(data['city']['name'] + ' ' + data['city']['country'])
+            ui.lineEditDateTime.setText(data['list'][1]['dt_txt'])
+            ui.lineEditDegree.setText(str('{0:+3.0f}'.format(data['list'][0]['main']['temp'])) + ' ' + '°C')
+            ui.lineEditSky.setText(data['list'][1]['weather'][0]['description'])
+            wind = owm_request.get_wind_direction(data['list'][1]['wind']['deg'])
+            ui.lineEditWind.setText(str(wind + '{0:2.0f}'.format(data['list'][1]['wind']['speed']) + 'м/с'))
+            ui.lineEditHumidity.setText(str(data['list'][1]['main']['humidity']) + '%')
+            pressure = '{0:4.0f}'.format(data['list'][1]['main']['pressure'] * 0.75006375541921)
+            ui.lineEditPressure.setText(str(pressure + ' мм рт ст'))
+
+            set_weather_icon(ui.labelPicture, data['list'][1]['weather'])
+            dialog.close()
 
     sc.pushButtonCancel.clicked.connect(dialog.reject)
-    sc.pushButtonOk.clicked.connect(dialog.accept)
+    sc.pushButtonOk.clicked.connect(other_city)
 
     dialog.exec()
 
 
+
 ui.pushButtonSearch.clicked.connect(search_city)
 
-start(data)
+ui.pushButtonUpdate.clicked.connect(start)
+
 window.show()
 sys.exit(app.exec_())
